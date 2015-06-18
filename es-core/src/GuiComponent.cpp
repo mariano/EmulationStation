@@ -5,7 +5,7 @@
 #include "animations/AnimationController.h"
 #include "ThemeData.h"
 
-GuiComponent::GuiComponent(Window* window) : mWindow(window), mParent(NULL), mOpacity(255), 
+GuiComponent::GuiComponent(Window* window) : mWindow(window), mParent(NULL), mOpacity(255),
 	mPosition(Eigen::Vector3f::Zero()), mSize(Eigen::Vector2f::Zero()), mTransform(Eigen::Affine3f::Identity())
 {
 	for(unsigned char i = 0; i < MAX_ANIMATIONS; i++)
@@ -198,6 +198,14 @@ void GuiComponent::textInput(const char* text)
 	{
 		(*iter)->textInput(text);
 	}
+}
+
+void GuiComponent::onSleep()
+{
+}
+
+void GuiComponent::onWake()
+{
 }
 
 void GuiComponent::setAnimation(Animation* anim, int delay, std::function<void()> finishedCallback, bool reverse, unsigned char slot)

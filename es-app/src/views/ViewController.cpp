@@ -1,8 +1,8 @@
 #include "views/ViewController.h"
 #include "Log.h"
 #include "SystemData.h"
+#include "FileData.h"
 #include "Settings.h"
-
 #include "views/gamelist/BasicGameListView.h"
 #include "views/gamelist/DetailedGameListView.h"
 #include "views/gamelist/GridGameListView.h"
@@ -106,7 +106,7 @@ void ViewController::goToGameList(SystemData* system)
 void ViewController::playViewTransition()
 {
 	Eigen::Vector3f target(Eigen::Vector3f::Identity());
-	if(mCurrentView) 
+	if(mCurrentView)
 		target = mCurrentView->getPosition();
 
 	// no need to animate, we're not going anywhere (probably goToNextGamelist() or goToPrevGamelist() when there's only 1 system)
@@ -155,6 +155,50 @@ void ViewController::onFileChanged(FileData* file, FileChangeType change)
 		it->second->onFileChanged(file, change);
 }
 
+FileData* ViewController::pickRandom()
+{
+	FileData* pickedGame = nullptr;
+	// TODO MAKE THIS RANDOM
+	for(auto it = mGameListViews.begin(); it != mGameListViews.end(); it++)
+	{
+		LOG(LogInfo) << " SYSTEM DATA: " << it->first->getName();
+		LOG(LogInfo) << " GAMES: " << it->first->getGameCount();
+
+		const std::vector<FileData*>& files = it->second->getCursor()->getParent()->getChildren();
+		for(auto game = files.begin(); game != files.end(); game++)
+		{
+			if ((*game)->getType() == GAME && !(*game)->metadata.get("name").empty()) {
+				pickedGame = *game;
+				break;
+			}
+		}
+	}
+	return pickedGame;
+}
+
+void ViewController::onSleep()
+{
+	LOG(LogInfo) << " ViewController::onSleep()";
+	FileData* game = pickRandom();
+	if (game == nullptr) {
+		return;
+	}
+	LOG(LogInfo) << " GAME: " << game->getCleanName();
+
+	/*
+	//this->launch(*game);
+	mLockInput = true;
+	(*game)->getSystem()->launchGame(mWindow, *game);
+	mLockInput = false;
+	this->onFileChanged(*game, FILE_METADATA_CHANGED);
+	*/
+}
+
+void ViewController::onWake()
+{
+	LOG(LogInfo) << " ViewController::onWake()";
+}
+
 void ViewController::launch(FileData* game, Eigen::Vector3f center)
 {
 	if(game->getType() != GAME)
@@ -178,6 +222,7 @@ void ViewController::launch(FileData* game, Eigen::Vector3f center)
 			//mFadeOpacity = lerp<float>(0.0f, 1.0f, t*t*t + 1);
 			mFadeOpacity = lerp<float>(0.0f, 1.0f, t);
 		};
+
 		setAnimation(new LambdaAnimation(fadeFunc, 800), 0, [this, game, fadeFunc]
 		{
 			game->getSystem()->launchGame(mWindow, game);
@@ -187,7 +232,7 @@ void ViewController::launch(FileData* game, Eigen::Vector3f center)
 		});
 	}else{
 		// move camera to zoom in on center + fade out, launch game, come back in
-		setAnimation(new LaunchAnimation(mCamera, mFadeOpacity, center, 1500), 0, [this, origCamera, center, game] 
+		setAnimation(new LaunchAnimation(mCamera, mFadeOpacity, center, 1500), 0, [this, origCamera, center, game]
 		{
 			game->getSystem()->launchGame(mWindow, game);
 			mCamera = origCamera;
@@ -219,12 +264,12 @@ std::shared_ptr<IGameListView> ViewController::getGameListView(SystemData* syste
 			break;
 		}
 	}
-		
+
 	if(detailed)
 		view = std::shared_ptr<IGameListView>(new DetailedGameListView(mWindow, system->getRootFolder()));
 	else
 		view = std::shared_ptr<IGameListView>(new BasicGameListView(mWindow, system->getRootFolder()));
-		
+
 	// uncomment for experimental "image grid" view
 	//view = std::shared_ptr<IGameListView>(new GridGameListView(mWindow, system->getRootFolder()));
 
@@ -292,7 +337,7 @@ void ViewController::render(const Eigen::Affine3f& parentTrans)
 
 	// draw systemview
 	getSystemListView()->render(trans);
-	
+
 	// draw gamelists
 	for(auto it = mGameListViews.begin(); it != mGameListViews.end(); it++)
 	{
@@ -387,7 +432,7 @@ std::vector<HelpPrompt> ViewController::getHelpPrompts()
 	std::vector<HelpPrompt> prompts;
 	if(!mCurrentView)
 		return prompts;
-	
+
 	prompts = mCurrentView->getHelpPrompts();
 	prompts.push_back(HelpPrompt("start", "menu"));
 

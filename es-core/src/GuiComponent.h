@@ -21,6 +21,9 @@ public:
 
 	virtual void textInput(const char* text);
 
+	virtual void onSleep();
+	virtual void onWake();
+
 	//Called when input is received.
 	//Return true if the input is consumed, false if it should continue to be passed to other children.
 	virtual bool input(InputConfig* config, Input input);
@@ -45,7 +48,7 @@ public:
     void setSize(const Eigen::Vector2f& size);
     void setSize(float w, float h);
     virtual void onSizeChanged() {};
-	
+
 	void setParent(GuiComponent* parent);
 	GuiComponent* getParent() const;
 
@@ -87,7 +90,7 @@ public:
 
 	// Called whenever help prompts change.
 	void updateHelpPrompts();
-	
+
 	virtual HelpStyle getHelpStyle();
 
 protected:
